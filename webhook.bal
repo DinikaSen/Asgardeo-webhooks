@@ -1,6 +1,7 @@
 import ballerinax/trigger.asgardeo;
 import ballerina/http;
 import ballerina/log;
+import ballerina/regex;
 
 #User object for Graph API with minimum required details.
 type User record {
@@ -36,34 +37,32 @@ final http:Client graphApiEp = check new("https://graph.microsoft.com/v1.0",
 service asgardeo:RegistrationService on webhookListener {
   
     remote function onAddUser(asgardeo:AddUserEvent event ) returns error? {
-      log:printInfo("In add user");
-      log:printInfo(event.toJsonString());
         asgardeo:AddUserData? userData = event.eventData;
-        log:printInfo(userData.toJsonString());
-        if (userData != () && userData?.userName != ()) {
+        if (userData != () && userData?.userName != null && userData?.userName != ()) {
+          string username = <string> userData?.userName;
           User azureUser = {
-            displayName: userData?.userName ?: "",
-            mailNickname: userData?.userName ?: "",
-            userPrincipalName: userData?.userName ?: ""
+            displayName: username,
+            mailNickname: regex:split(username, "@")[0],
+            userPrincipalName: username
           };
-          log:printInfo(azureUser.toJsonString());
           json response = check addUserToAzureDomain(azureUser);
+          log:printInfo("Before");
           log:printInfo(response.toJsonString());
+          log:printInfo("After");
         }
     }
   
     remote function onConfirmSelfSignup(asgardeo:GenericEvent event ) returns error? {
-        log:printInfo(event.toJsonString());
+        // Not Implemented
     }
   
     remote function onAcceptUserInvite(asgardeo:GenericEvent event ) returns error? {
-        log:printInfo(event.toJsonString());
+        // Not Implemented
     }
 }
 
 function addUserToAzureDomain(User user) returns json|error {
 
     json response = check graphApiEp->post("/users", user);
-    log:printInfo(response.toJsonString());
     return response;
 }
