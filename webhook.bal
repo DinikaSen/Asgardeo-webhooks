@@ -63,8 +63,39 @@ service asgardeo:RegistrationService on webhookListener {
     }
 }
 
+service asgardeo:UserOperationService on webhookListener {
+
+    remote function onLockUser(asgardeo:GenericEvent event) returns error? {
+    // Not Implemented
+    }
+
+    remote function onUnlockUser(asgardeo:GenericEvent event) returns error? {
+        // Not Implemented
+    }
+
+    remote function onUpdateUserCredentials(asgardeo:GenericEvent event) returns error? {
+        // Not Implemented
+    }
+
+    remote function onDeleteUser(asgardeo:GenericEvent event) returns error? {
+        log:printInfo("Before delete user");
+        log:printInfo(event.toJsonString());
+        log:printInfo("After delete user");
+    }
+
+    remote function onUpdateUserGroup(asgardeo:UserGroupUpdateEvent event) returns error? {
+        // Not Implemented
+    }
+}
+
 function addUserToAzureDomain(User user) returns json|error {
 
     json response = check graphApiEp->post("/users", user);
+    return response;
+}
+
+function deleteUserFromAzureDomain(string userPrincipalName) returns json|error {
+
+    json response = check graphApiEp->delete("/users/" + userPrincipalName);
     return response;
 }
