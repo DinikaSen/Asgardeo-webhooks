@@ -9,6 +9,7 @@ type User record {
     string displayName;
     string mailNickname;
     string userPrincipalName;
+    string onPremisesImmutableId;
     #Setting a default password with forced password reset enabled.
     json passwordProfile = {
       forceChangePasswordNextSignIn : true,
@@ -38,12 +39,13 @@ service asgardeo:RegistrationService on webhookListener {
   
     remote function onAddUser(asgardeo:AddUserEvent event ) returns error? {
         asgardeo:AddUserData? userData = event.eventData;
-        if (userData != () && userData?.userName != null && userData?.userName != ()) {
+        if (userData != () && userData?.userId != () && userData?.userName != ()) {
           string username = <string> userData?.userName;
           User azureUser = {
             displayName: username,
             mailNickname: regex:split(username, "@")[0],
-            userPrincipalName: username
+            userPrincipalName: username,
+            onPremisesImmutableId: <string> userData?.userId
           };
           json response = check addUserToAzureDomain(azureUser);
           log:printInfo("Before");
