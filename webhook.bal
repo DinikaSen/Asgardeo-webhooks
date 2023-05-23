@@ -25,19 +25,29 @@ service asgardeo:UserOperationService on webhookListener {
     remote function onLockUser(asgardeo:GenericEvent event ) returns error? {
       //Not Implemented
     }
+
     remote function onUnlockUser(asgardeo:GenericEvent event ) returns error? {
       //Not Implemented
     }
+
     remote function onUpdateUserCredentials(asgardeo:GenericEvent event ) returns error? {
       //Not Implemented
     }
+
     remote function onDeleteUser(asgardeo:GenericEvent event ) returns error? {
-        log:printInfo("Before delete user");
-        log:printInfo(event.toJsonString());
-        log:printInfo("After delete user");
+      string? userPricipleName = event?.eventData?.userName;
+      if (userPricipleName != ()) {
+          log:printInfo("Deteling user : " + userPricipleName);
+          json response = check deleteUserFromAzureDomain(userPricipleName);
+          log:printInfo(response.toJsonString());
+      } else {
+        return error(string `Username not found in the event details`);
+      }  
     }
+
     remote function onUpdateUserGroup(asgardeo:UserGroupUpdateEvent event ) returns error? {
-      //Not Implemented
+      log:printInfo("Updating groups for user");
+      log:printInfo(event.toJsonString());
     }
 }
 
