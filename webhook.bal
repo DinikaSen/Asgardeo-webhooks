@@ -47,11 +47,11 @@ service asgardeo:RegistrationService on webhookListener {
                 userPrincipalName: username,
                 onPremisesImmutableId: <string> userData?.userId
                 };
-            json|error response = addUserToAzureDomain(azureUser);
+            json|error response = graphApiEp->post("/users", azureUser);
             if (response is error) {
-                log:printError( "Provisioning " + username + " to Azure failed with error.", response);
+                log:printError( "Provisioning to Azure failed for user : " + username , response);
             } else {
-                log:printInfo(username + " provisioned to Azure successfully.");
+                log:printInfo("Provisioning to Azure successful for user : " + username);
             }
         } else {
             return error(string `Insufficient user data in the event details.`);
@@ -68,9 +68,3 @@ service asgardeo:RegistrationService on webhookListener {
 }
 
 service /ignore on httpListener {}
-
-function addUserToAzureDomain(User user) returns json|error {
-
-    json|error response = graphApiEp->post("/users", user);
-    return response;
-}
