@@ -38,7 +38,6 @@ final http:Client graphApiEp = check new("https://graph.microsoft.com/v1.0",
 service asgardeo:RegistrationService on webhookListener {
   
     remote function onAddUser(asgardeo:AddUserEvent event ) returns error? {
-        log:printInfo("onAddUser");
         asgardeo:AddUserData? userData = event.eventData;
         if (userData != () && userData?.userId != () && userData?.userName != ()) {
             string username = <string> userData?.userName;
@@ -50,9 +49,9 @@ service asgardeo:RegistrationService on webhookListener {
                 };
             json|error response = addUserToAzureDomain(azureUser);
             if (response is error) {
-                log:printError("Adding user failed with error", response);
+                log:printError( "Provisioning " + username + " to Azure failed with error.", response);
             } else {
-                log:printInfo("User added successfully.");
+                log:printInfo(username + " provisioned to Azure successfully.");
             }
         } else {
             return error(string `Insufficient user data in the event details.`);
@@ -68,50 +67,10 @@ service asgardeo:RegistrationService on webhookListener {
     }
 }
 
-service asgardeo:UserOperationService on webhookListener {
-  
-    remote function onLockUser(asgardeo:GenericEvent event ) returns error? {
-      //Not Implemented
-    }
-
-    remote function onUnlockUser(asgardeo:GenericEvent event ) returns error? {
-      //Not Implemented
-    }
-
-    remote function onUpdateUserCredentials(asgardeo:GenericEvent event ) returns error? {
-      //Not Implemented
-    }
-
-    remote function onDeleteUser(asgardeo:GenericEvent event ) returns error? {
-        log:printInfo("onDeleteUser");
-        string? userPricipleName = event?.eventData?.userName;
-        if (userPricipleName != ()) {
-            log:printInfo("Deteling user : " + userPricipleName);
-            json|error response = deleteUserFromAzureDomain(userPricipleName);
-            if (response is error) {
-                log:printError("Deleting user failed with error", response);
-            } else {
-                log:printInfo("User deleted successfully.");
-            }
-        } else {
-            return error(string `Username not found in the event details.`);
-        }  
-    }
-
-    remote function onUpdateUserGroup(asgardeo:UserGroupUpdateEvent event ) returns error? {
-      log:printInfo("Updating groups for user");
-      log:printInfo(event.toJsonString());
-    }
-}
+service /ignore on httpListener {}
 
 function addUserToAzureDomain(User user) returns json|error {
 
     json|error response = graphApiEp->post("/users", user);
-    return response;
-}
-
-function deleteUserFromAzureDomain(string userPrincipalName) returns json|error {
-
-    json|error response = graphApiEp->delete("/users/" + userPrincipalName);
     return response;
 }
