@@ -23,31 +23,34 @@ final http:Client graphApiEp = check new("https://graph.microsoft.com/v1.0",
 service asgardeo:UserOperationService on webhookListener {
   
     remote function onLockUser(asgardeo:GenericEvent event ) returns error? {
-      //Not Implemented
+        //Not Implemented
     }
 
     remote function onUnlockUser(asgardeo:GenericEvent event ) returns error? {
-      //Not Implemented
+        //Not Implemented
     }
 
     remote function onUpdateUserCredentials(asgardeo:GenericEvent event ) returns error? {
-      //Not Implemented
+        //Not Implemented
     }
 
     remote function onDeleteUser(asgardeo:GenericEvent event ) returns error? {
       string? userPricipleName = event?.eventData?.userName;
       if (userPricipleName != ()) {
-          log:printInfo("Deteling user : " + userPricipleName);
-          json response = check deleteUserFromAzureDomain(userPricipleName);
-          log:printInfo(response.toJsonString());
+            json|error response = deleteUserFromAzureDomain(userPricipleName);
+            if (response is error) {
+                log:printError("Deleting user from Azure failed with error for user : " + userPricipleName, response);
+            } else {
+                log:printInfo("Deleting user from Azure successful for user : " + userPricipleName);
+            }
       } else {
-        return error(string `Username not found in the event details`);
+            return error(string `Username not found in the event details`);
       }  
     }
 
     remote function onUpdateUserGroup(asgardeo:UserGroupUpdateEvent event ) returns error? {
-      log:printInfo("Updating groups for user");
-      log:printInfo(event.toJsonString());
+        log:printInfo("Updating groups for user");
+        log:printInfo(event.toJsonString());
     }
 }
 
@@ -55,6 +58,6 @@ service /ignore on httpListener {}
 
 function deleteUserFromAzureDomain(string userPrincipalName) returns json|error {
 
-    json response = check graphApiEp->delete("/users/" + userPrincipalName);
+    json|error response = graphApiEp->delete("/users/" + userPrincipalName);
     return response;
 }
