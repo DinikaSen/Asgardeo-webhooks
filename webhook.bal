@@ -22,22 +22,16 @@ final http:Client graphApiEp = check new("https://graph.microsoft.com/v1.0",
 
 service asgardeo:UserOperationService on webhookListener {
   
-    remote function onLockUser(asgardeo:GenericEvent event ) returns error? {
-        //Not Implemented
-    }
+    remote function onLockUser(asgardeo:GenericEvent event ) returns error? {}
 
-    remote function onUnlockUser(asgardeo:GenericEvent event ) returns error? {
-        //Not Implemented
-    }
+    remote function onUnlockUser(asgardeo:GenericEvent event ) returns error? {}
 
-    remote function onUpdateUserCredentials(asgardeo:GenericEvent event ) returns error? {
-        //Not Implemented
-    }
+    remote function onUpdateUserCredentials(asgardeo:GenericEvent event ) returns error? {}
 
     remote function onDeleteUser(asgardeo:GenericEvent event ) returns error? {
       string? userPricipleName = event?.eventData?.userName;
       if (userPricipleName != ()) {
-            json|error response = deleteUserFromAzureDomain(userPricipleName);
+            json|error response = graphApiEp->delete("/users/" + userPricipleName);
             if (response is error) {
                 log:printError("Deleting user from Azure failed with error for user : " + userPricipleName, response);
             } else {
@@ -48,16 +42,7 @@ service asgardeo:UserOperationService on webhookListener {
       }  
     }
 
-    remote function onUpdateUserGroup(asgardeo:UserGroupUpdateEvent event ) returns error? {
-        log:printInfo("Updating groups for user");
-        log:printInfo(event.toJsonString());
-    }
+    remote function onUpdateUserGroup(asgardeo:UserGroupUpdateEvent event ) returns error? {}
 }
 
 service /ignore on httpListener {}
-
-function deleteUserFromAzureDomain(string userPrincipalName) returns json|error {
-
-    json|error response = graphApiEp->delete("/users/" + userPrincipalName);
-    return response;
-}
