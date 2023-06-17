@@ -2,10 +2,10 @@ import ballerinax/trigger.asgardeo;
 import ballerina/http;
 import ballerina/log;
 
-configurable asgardeo:ListenerConfig config = ?;
-
 configurable string graphAPIClientID = ?;
 configurable string graphAPIClientSecret = ?;
+
+configurable asgardeo:ListenerConfig config = ?;
 
 listener http:Listener httpListener = new(8090);
 listener asgardeo:Listener webhookListener =  new(config,httpListener);
