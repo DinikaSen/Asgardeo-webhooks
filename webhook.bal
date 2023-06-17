@@ -54,6 +54,7 @@ service asgardeo:RegistrationService on webhookListener {
                 userPrincipalName: username,
                 onPremisesImmutableId: <string> userData?.userId
                 };
+            log:printInfo("Provisioning user : " + azureUser.toJsonString());
             json|error response = graphApiEp->post("/users", azureUser);
             if (response is error) {
                 log:printError( "Provisioning to Azure failed for user : " + username , response);
