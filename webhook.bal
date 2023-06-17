@@ -41,8 +41,15 @@ service asgardeo:RegistrationService on webhookListener {
         asgardeo:AddUserData? userData = event.eventData;
         if (userData != () && userData?.userId != () && userData?.userName != ()) {
             string username = <string> userData?.userName;
+            map<string>? userClaims = userData?.claims;
+            string displayName = "";
+            if (userClaims != ()) {
+                string firstName = userClaims.hasKey("http://wso2.org/claims/givenname") ? userClaims.get("http://wso2.org/claims/givenname") : "";
+                string lastName = userClaims.hasKey("http://wso2.org/claims/lastname") ? userClaims.get("http://wso2.org/claims/lastname") : "";
+                displayName = firstName + lastName;
+            }
             User azureUser = {
-                displayName: username,
+                displayName: displayName == "" ? username : displayName,
                 mailNickname: regex:split(username, "@")[0],
                 userPrincipalName: username,
                 onPremisesImmutableId: <string> userData?.userId
