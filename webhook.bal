@@ -17,10 +17,10 @@ type User record {
     };
 };
 
-configurable asgardeo:ListenerConfig config = ?;
-
 configurable string graphAPIClientID = ?;
 configurable string graphAPIClientSecret = ?;
+
+configurable asgardeo:ListenerConfig config = ?;
 
 listener http:Listener httpListener = new(8090);
 listener asgardeo:Listener webhookListener =  new(config,httpListener);
@@ -58,13 +58,9 @@ service asgardeo:RegistrationService on webhookListener {
       }
     }
   
-    remote function onConfirmSelfSignup(asgardeo:GenericEvent event ) returns error? {
-        // Not Implemented
-    }
+    remote function onConfirmSelfSignup(asgardeo:GenericEvent event ) returns error? {}
   
-    remote function onAcceptUserInvite(asgardeo:GenericEvent event ) returns error? {
-        // Not Implemented
-    }
+    remote function onAcceptUserInvite(asgardeo:GenericEvent event ) returns error? {}
 }
 
 service /ignore on httpListener {}
