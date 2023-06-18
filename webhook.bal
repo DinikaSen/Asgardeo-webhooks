@@ -46,7 +46,7 @@ service asgardeo:RegistrationService on webhookListener {
             if (userClaims != ()) {
                 string firstName = userClaims.hasKey("http://wso2.org/claims/givenname") ? userClaims.get("http://wso2.org/claims/givenname") : "";
                 string lastName = userClaims.hasKey("http://wso2.org/claims/lastname") ? userClaims.get("http://wso2.org/claims/lastname") : "";
-                displayName = firstName + lastName;
+                displayName = firstName + " " + lastName;
             }
             User azureUser = {
                 displayName: displayName == "" ? username : displayName,
