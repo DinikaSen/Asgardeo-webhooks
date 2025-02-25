@@ -1,0 +1,8 @@
+[package]
+org = "ciamdemodinika"
+name = "publish_to_choreo"
+version = "0.1.0"
+distribution = "2201.5.0"
+
+[build-options]
+observabilityIncluded = true
