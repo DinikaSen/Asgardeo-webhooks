@@ -5,7 +5,7 @@ import ballerinax/salesforce;
 import ballerina/http;
 
 // Create Salesforce client configuration by reading from environment.
-configurable string salesforceAppClientId = ;
+configurable string salesforceAppClientId = ?;
 configurable string salesforceAppClientSecret = ?;
 configurable string salesforceAppRefreshToken = ?;
 configurable string salesforceAppRefreshUrl = ?;
