@@ -54,4 +54,10 @@ service asgardeo:UserOperationService on webhookListener {
     
 }
 
-service /ignore on httpListener {}
+service / on new http:Listener(9191) {
+
+    resource function get greeting() returns string {
+        log:printInfo("Hello, World!");
+        return "Hello, World!";
+    }
+}
