@@ -1,5 +1,5 @@
 [package]
-org = "dinika"
+org = "ciamdemodinika"
 name = "salesforce_integration"
 version = "0.1.0"
 distribution = "2201.5.0"
