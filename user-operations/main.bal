@@ -35,5 +35,5 @@ service asgardeo:UserOperationService on webhookListener {
     }
 }
 
-
 service /ignore on httpListener {}
+

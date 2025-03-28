@@ -14,7 +14,7 @@ service asgardeo:LoginService on webhookListener {
         log:printInfo(event.toJsonString());
     }
 
-    remote function onLoginFailed(asgardeo:LoginFailedEvent event ) returns error? {
+    remote function onLoginFailed(asgardeo:GenericEvent event ) returns error? {
 
         log:printInfo(event.toJsonString());
     }
