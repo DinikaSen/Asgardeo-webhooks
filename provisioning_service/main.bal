@@ -3,7 +3,7 @@ import ballerina/http;
 import ballerina/log;
 
 // HTTP listener for webhook endpoint
-listener http:Listener webhookListener = new (webhookPort);
+listener http:Listener webhookListener = new (9090);
 
 // Webhook service to handle Asgardeo events
 service / on webhookListener {
