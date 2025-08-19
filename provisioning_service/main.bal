@@ -6,7 +6,7 @@ import ballerina/log;
 listener http:Listener webhookListener = new (webhookPort);
 
 // Webhook service to handle Asgardeo events
-service /asgardeo on webhookListener {
+service / on webhookListener {
 
     // GET resource to handle webhook subscription verification
     resource function get webhook(http:Caller caller, http:Request request) returns error? {
@@ -81,23 +81,28 @@ service /asgardeo on webhookListener {
             return;
         }
 
-        // Verify signature if webhook secret is configured
-        if webhookSecret.trim() != "" {
-            error? signatureVerification = verifyWebhookSignature(request, rawPayload);
-            if signatureVerification is error {
-                log:printError("Webhook signature verification failed", signatureVerification);
-                http:Response unauthorizedResponse = new;
-                unauthorizedResponse.statusCode = 401;
-                unauthorizedResponse.setJsonPayload({
-                    message: "Unauthorized: Invalid signature",
-                    success: false
-                });
-                check caller->respond(unauthorizedResponse);
-                return;
-            }
-            log:printInfo("Webhook signature verification successful");
+        // Check if signature verification should be skipped
+        if skipSignatureVerification {
+            log:printInfo("Signature verification skipped due to configuration");
         } else {
-            log:printWarn("Webhook secret not configured, skipping signature verification");
+            // Verify signature if webhook secret is configured
+            if webhookSecret.trim() != "" {
+                error? signatureVerification = verifyWebhookSignature(request, rawPayload);
+                if signatureVerification is error {
+                    log:printError("Webhook signature verification failed", signatureVerification);
+                    http:Response unauthorizedResponse = new;
+                    unauthorizedResponse.statusCode = 401;
+                    unauthorizedResponse.setJsonPayload({
+                        message: "Unauthorized: Invalid signature",
+                        success: false
+                    });
+                    check caller->respond(unauthorizedResponse);
+                    return;
+                }
+                log:printInfo("Webhook signature verification successful");
+            } else {
+                log:printWarn("Webhook secret not configured, skipping signature verification");
+            }
         }
 
         // Convert raw payload to string then to JSON
@@ -166,11 +171,11 @@ function verifyWebhookSignature(http:Request request, byte[] rawPayload) returns
     }
 
     // Parse signature header (format: sha256=<hash>)
-    if !signatureHeader.startsWith("sha256=") {
-        return error("Invalid signature format, expected sha256= prefix");
-    }
+    // if !signatureHeader.startsWith("sha256=") {
+    //     return error("Invalid signature format, expected sha256= prefix");
+    // }
 
-    string expectedSignature = signatureHeader.substring(7); // Remove "sha256=" prefix
+    // string expectedSignature = signatureHeader.substring(7); // Remove "sha256=" prefix
 
     // Compute HMAC-SHA256 using webhook secret
     byte[] secretBytes = webhookSecret.toBytes();
@@ -184,7 +189,7 @@ function verifyWebhookSignature(http:Request request, byte[] rawPayload) returns
     string computedSignature = computedHmac.toBase16();
 
     // Compare signatures (case-insensitive)
-    if expectedSignature.toLowerAscii() != computedSignature.toLowerAscii() {
+    if signatureHeader.toLowerAscii() != computedSignature.toLowerAscii() {
         return error("Signature mismatch: computed signature does not match expected signature");
     }
 
