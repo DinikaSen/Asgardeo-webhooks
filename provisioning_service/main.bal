@@ -1,6 +1,7 @@
 import ballerina/crypto;
 import ballerina/http;
 import ballerina/log;
+import ballerina/lang.regexp;
 
 // HTTP listener for webhook endpoint
 listener http:Listener webhookListener = new (9090);
@@ -148,7 +149,10 @@ service / on webhookListener {
                 message: "Failed to process webhook event",
                 success: false
             };
-            check caller->respond(errorResponse);
+            http:InternalServerError serverError = {
+                body: errorResponse
+            };
+            check caller->respond(serverError);
             return;
         }
 
@@ -231,6 +235,15 @@ function processEventByType(string eventType, json eventData, SecurityEventToken
     }
 }
 
+// Helper function to format claim value for logging
+function formatClaimValue(string|string[] claimValue) returns string {
+    if claimValue is string {
+        return claimValue;
+    } else {
+        return string:'join(", ", ...claimValue);
+    }
+}
+
 // Function to process registration success events
 function processRegistrationSuccessEvent(json eventData, SecurityEventToken setPayload) returns error? {
 
@@ -246,13 +259,53 @@ function processRegistrationSuccessEvent(json eventData, SecurityEventToken setP
             initiatorType = regEvent.initiatorType,
             action = regEvent.action);
 
+    string userEmail = "default@email.com";
+    string userFirstName = "fname";
+    string userLastName = "lname";
+
     // Process user claims
     foreach UserClaim claim in regEvent.user.claims {
-        log:printInfo("User claim", claimUri = claim.uri, claimValue = claim.value);
+        string formattedValue = formatClaimValue(claim.value);
+        log:printInfo("User claim", claimUri = claim.uri, claimValue = formattedValue);
+        if (claim.uri == "http://wso2.org/claims/emailaddress") {
+            userEmail = formattedValue;
+        } else if (claim.uri == "http://wso2.org/claims/givenname") {
+            userFirstName = formattedValue;
+        } else if (claim.uri == "http://wso2.org/claims/lastname") {
+            userLastName = formattedValue;
+        }
     }
 
-    // Add your registration success processing logic here
-    // For example: send welcome emails, provision user accounts, sync to external systems, etc.
+    // Get OAuth2 access token
+    string accessToken = check getAccessToken();
+    log:printInfo("Successfully obtained access token");
+
+    string mailNickname = regexp:split(re `@`, userEmail)[0];
+    string upn = mailNickname + "#EXT#@" + issuerDomain;
+
+     AzureUserData azureUser = {
+        mailNickname: mailNickname,
+        userPrincipalName: upn,
+        mail: userEmail,
+        accountEnabled: true,
+        displayName: userFirstName + " " + userLastName
+     };
+        
+    string processingMessage = string `Processing user: ${azureUser.displayName} (${azureUser.mail})`;
+    log:printInfo(processingMessage);
+    
+    // Create user in Azure AD
+    AzureUserResponse|error createdUser = createAzureUser(userData = azureUser, accessToken = accessToken);
+    
+    if createdUser is error {
+        string userErrorMessage = string `Error creating user ${azureUser.displayName}: ${createdUser.message()}`;
+        log:printInfo(userErrorMessage);
+        return error(userErrorMessage);
+    } else {
+        string userId = createdUser.id ?: "Unknown ID";
+        string userSuccessMessage = string `Successfully created user: ${azureUser.displayName} with ID: ${userId}`;
+        log:printInfo(userSuccessMessage);
+    }
 }
 
 // Function to process user profile updated events
@@ -274,7 +327,8 @@ function processUserProfileUpdatedEvent(json eventData, SecurityEventToken setPa
     UserClaim[]? addedClaims = updateEvent.user.addedClaims;
     if addedClaims is UserClaim[] {
         foreach UserClaim claim in addedClaims {
-            log:printInfo("Added claim", claimUri = claim.uri, claimValue = claim.value);
+            string formattedValue = formatClaimValue(claim.value);
+            log:printInfo("Added claim", claimUri = claim.uri, claimValue = formattedValue);
         }
     }
 
@@ -282,7 +336,8 @@ function processUserProfileUpdatedEvent(json eventData, SecurityEventToken setPa
     UserClaim[]? updatedClaims = updateEvent.user.updatedClaims;
     if updatedClaims is UserClaim[] {
         foreach UserClaim claim in updatedClaims {
-            log:printInfo("Updated claim", claimUri = claim.uri, claimValue = claim.value);
+            string formattedValue = formatClaimValue(claim.value);
+            log:printInfo("Updated claim", claimUri = claim.uri, claimValue = formattedValue);
         }
     }
 
@@ -306,7 +361,8 @@ function processUserDeletedEvent(json eventData, SecurityEventToken setPayload) 
 
     // Process user claims
     foreach UserClaim claim in deleteEvent.user.claims {
-        log:printInfo("Deleted user claim", claimUri = claim.uri, claimValue = claim.value);
+        string formattedValue = formatClaimValue(claim.value);
+        log:printInfo("Deleted user claim", claimUri = claim.uri, claimValue = formattedValue);
     }
 
     // Add your user deletion processing logic here
